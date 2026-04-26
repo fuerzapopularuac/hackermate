@@ -67,6 +67,9 @@ class Tablero:
     # -------------------------
     # MOVER PIEZA CON VALIDACIÓN
     # -------------------------
+    # -------------------------
+    # MOVER PIEZA CON VALIDACIÓN
+    # -------------------------
     def mover_pieza(self, f1, c1, f2, c2):
 
         pieza = self.matriz[f1][c1]
@@ -80,6 +83,11 @@ class Tablero:
 
             self.matriz[f2][c2] = pieza
             self.matriz[f1][c1] = None
+
+            # 🔥 SPRINT 3: PROMOCIÓN DEL PEÓN 🔥
+            if pieza.tipo == "peon":
+                if (pieza.color == "blanca" and f2 == 0) or (pieza.color == "oscura" and f2 == 7):
+                    pieza.tipo = "reina"  # Promoción automática a reina
 
             return True
 
