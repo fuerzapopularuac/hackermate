@@ -1,5 +1,6 @@
 from PIL import Image, ImageTk
 from game.tablero import Tablero
+from game.reglas import esta_en_jaque
 
 class JuegoPVP:
 
@@ -217,10 +218,23 @@ class JuegoPVP:
 
         self.canvas.create_rectangle(px1, ty1, px2, ty2, fill="black", outline="#00FF88")
 
+        # 🔥 SPRINT 3: DETECCIÓN VISUAL DE JAQUE 🔥
+        # Determinamos el color del jugador actual
+        color_actual = "blanca" if self.turno == self.jugador1 else "oscura"
+        
+        texto_turno = f"Turno de:\n{self.turno}"
+        color_texto = "#00FF88" # Verde por defecto
+
+        if esta_en_jaque(self.tablero, color_actual):
+            texto_turno += "\n¡ESTÁS EN JAQUE!"
+            color_texto = "#FF3333" # Rojo brillante para la alerta
+            # Opcional: Cambiamos el borde del panel a rojo
+            self.canvas.create_rectangle(px1, ty1, px2, ty2, fill="black", outline="#FF3333", width=2)
+
         self.canvas.create_text(
             px1 + 20, ty1 + 20,
-            text=f"Turno de:\n{self.turno}",
-            fill="#00FF88",
+            text=texto_turno,
+            fill=color_texto,
             anchor="nw",
             font=("Consolas", 14, "bold")
         )
