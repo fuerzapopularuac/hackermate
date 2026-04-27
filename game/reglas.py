@@ -124,11 +124,55 @@ def movimiento_valido(tablero, pieza, f1, c1, f2, c2):
     # REY
     # -------------------------
     if pieza.tipo == "rey":
-        return abs(f2 - f1) <= 1 and abs(c2 - c1) <= 1
+        # Movimiento normal de 1 casilla
+        if abs(f2 - f1) <= 1 and abs(c2 - c1) <= 1:
+            return True
 
-    return False
+        #  SPRINT 3: LÓGICA DE ENROQUE 
+        # Si el rey no se ha movido, se mueve en la misma fila, y salta 2 columnas
+        if not pieza.ha_movido and f1 == f2 and abs(c2 - c1) == 2:
+            
+            # Determinar si es enroque corto (derecha) o largo (izquierda)
+            if c2 > c1: 
+                c_torre = 7
+                paso = 1
+            else:       
+                c_torre = 0
+                paso = -1
+                
+            torre = tablero.obtener_pieza(f1, c_torre)
+            
+            # Verificamos que sea la torre y no se haya movido
+            if torre and torre.tipo == "torre" and not torre.ha_movido:
+                
+                # 1. Verificar que no haya piezas en medio
+                c_actual = c1 + paso
+                while c_actual != c_torre:
+                    if tablero.obtener_pieza(f1, c_actual):
+                        return False
+                    c_actual += paso
+                    
+                # 2. Verificar que el rey no esté en jaque actualmente
+                if esta_en_jaque(tablero, pieza.color):
+                    return False
+                    
+                # 3. Verificar que el rey no pase por una casilla amenazada (simulación rápida)
+                tablero.matriz[f1][c1+paso] = pieza
+                tablero.matriz[f1][c1] = None
+                jaque_intermedio = esta_en_jaque(tablero, pieza.color)
+                
+                # Revertimos la simulación
+                tablero.matriz[f1][c1] = pieza
+                tablero.matriz[f1][c1+paso] = None
+                
+                if jaque_intermedio:
+                    return False
+                    
+                return True
 
-# 🔥 SPRINT 3: DETECCIÓN DE JAQUE 🔥
+        return False
+
+#  SPRINT 3: DETECCIÓN DE JAQUE 
 def esta_en_jaque(tablero, color_rey):
     f_rey = -1
     c_rey = -1
