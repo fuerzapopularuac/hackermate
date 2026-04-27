@@ -76,6 +76,7 @@ class JuegoPVP:
         self.dibujar(Fake())
 
     # -------------------------
+    # -------------------------
     def click(self, event):
 
         TAM = min(self.canvas.winfo_width(), self.canvas.winfo_height()) // 12
@@ -84,6 +85,11 @@ class JuegoPVP:
 
         col = (event.x - ox) // TAM
         fila = (event.y - oy) // TAM
+
+        # 🔥 BLOQUEAR CLICS SI EL JUEGO TERMINÓ
+        color_actual = "blanca" if self.turno == self.jugador1 else "oscura"
+        if not self.tablero.tiene_movimientos_validos(color_actual):
+            return
 
         if 0 <= fila < 8 and 0 <= col < 8:
 
@@ -216,20 +222,30 @@ class JuegoPVP:
         ty1 = int(alto * 0.30)
         ty2 = int(alto * 0.45)
 
-        self.canvas.create_rectangle(px1, ty1, px2, ty2, fill="black", outline="#00FF88")
-
-        # 🔥 SPRINT 3: DETECCIÓN VISUAL DE JAQUE 🔥
-        # Determinamos el color del jugador actual
+        # 🔥 SPRINT 3: LÓGICA VISUAL DE JAQUE MATE 🔥
         color_actual = "blanca" if self.turno == self.jugador1 else "oscura"
-        
-        texto_turno = f"Turno de:\n{self.turno}"
-        color_texto = "#00FF88" # Verde por defecto
+        en_jaque = esta_en_jaque(self.tablero, color_actual)
+        hay_movimientos = self.tablero.tiene_movimientos_validos(color_actual)
 
-        if esta_en_jaque(self.tablero, color_actual):
+        texto_turno = f"Turno de:\n{self.turno}"
+        color_texto = "#00FF88"
+        color_borde = "#00FF88"
+
+        if not hay_movimientos:
+            if en_jaque:
+                texto_turno = f"¡JAQUE MATE!\nGanó el rival"
+                color_texto = "#FFD700"  # Dorado de victoria
+                color_borde = "#FFD700"
+            else:
+                texto_turno = f"¡TABLAS!\nRey Ahogado"
+                color_texto = "#AAAAAA"  # Gris de empate
+                color_borde = "#AAAAAA"
+        elif en_jaque:
             texto_turno += "\n¡ESTÁS EN JAQUE!"
-            color_texto = "#FF3333" # Rojo brillante para la alerta
-            # Opcional: Cambiamos el borde del panel a rojo
-            self.canvas.create_rectangle(px1, ty1, px2, ty2, fill="black", outline="#FF3333", width=2)
+            color_texto = "#FF3333"  # Rojo de peligro
+            color_borde = "#FF3333"
+
+        self.canvas.create_rectangle(px1, ty1, px2, ty2, fill="black", outline=color_borde, width=2)
 
         self.canvas.create_text(
             px1 + 20, ty1 + 20,
@@ -238,7 +254,6 @@ class JuegoPVP:
             anchor="nw",
             font=("Consolas", 14, "bold")
         )
-
         # -------------------------
         # PANEL CARA
         # -------------------------

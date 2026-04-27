@@ -109,3 +109,32 @@ class Tablero:
             return True
 
         return False
+    
+    # -------------------------
+    # 🔥 SPRINT 3: DETECCIÓN DE JAQUE MATE / AHOGADO 🔥
+    # -------------------------
+    def tiene_movimientos_validos(self, color):
+        for f1 in range(8):
+            for c1 in range(8):
+                pieza = self.matriz[f1][c1]
+                if pieza and pieza.color == color:
+                    # Probar mover esta pieza a todas las casillas posibles
+                    for f2 in range(8):
+                        for c2 in range(8):
+                            if movimiento_valido(self, pieza, f1, c1, f2, c2):
+                                # Simulamos el movimiento
+                                pieza_destino_temp = self.matriz[f2][c2]
+                                self.matriz[f2][c2] = pieza
+                                self.matriz[f1][c1] = None
+                                
+                                en_jaque = esta_en_jaque(self, color)
+                                
+                                # Deshacemos la simulación
+                                self.matriz[f1][c1] = pieza
+                                self.matriz[f2][c2] = pieza_destino_temp
+                                
+                                # Si encontramos al menos UN movimiento que no termine en jaque, el juego sigue
+                                if not en_jaque:
+                                    return True
+        # Si revisamos TODO y nada nos salva... no hay movimientos válidos
+        return False

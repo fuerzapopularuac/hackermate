@@ -127,3 +127,32 @@ def movimiento_valido(tablero, pieza, f1, c1, f2, c2):
         return abs(f2 - f1) <= 1 and abs(c2 - c1) <= 1
 
     return False
+
+# 🔥 SPRINT 3: DETECCIÓN DE JAQUE 🔥
+def esta_en_jaque(tablero, color_rey):
+    f_rey = -1
+    c_rey = -1
+    
+    # 1. Encontrar la posición del rey de este color
+    for f in range(8):
+        for c in range(8):
+            p = tablero.obtener_pieza(f, c)
+            if p and p.tipo == "rey" and p.color == color_rey:
+                f_rey, c_rey = f, c
+                break
+        if f_rey != -1:
+            break
+            
+    if f_rey == -1:
+        return False # Por si acaso
+        
+    # 2. Verificar si alguna pieza enemiga puede llegar al rey
+    for f in range(8):
+        for c in range(8):
+            p = tablero.obtener_pieza(f, c)
+            if p and p.color != color_rey:
+                # Si un enemigo tiene un movimiento válido hacia el rey, es jaque
+                if movimiento_valido(tablero, p, f, c, f_rey, c_rey):
+                    return True
+                    
+    return False
