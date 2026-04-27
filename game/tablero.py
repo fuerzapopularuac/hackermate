@@ -1,5 +1,5 @@
 from game.piezas import Pieza
-from game.reglas import movimiento_valido
+from game.reglas import movimiento_valido, esta_en_jaque
 
 class Tablero:
 
@@ -65,7 +65,7 @@ class Tablero:
         return self.matriz[fila][col]
 
     # -------------------------
-    # MOVER PIEZA CON VALIDACIÓN
+    # MOVER PIEZA CON VALIDACIÓN Y SIMULACIÓN
     # -------------------------
     def mover_pieza(self, f1, c1, f2, c2):
 
@@ -75,12 +75,82 @@ class Tablero:
         if pieza is None:
             return False
 
-        # validar movimiento
+        # validar movimiento geométrico
         if movimiento_valido(self, pieza, f1, c1, f2, c2):
 
+            # 🔥 SPRINT 3: SIMULACIÓN DE AUTO-JAQUE 🔥
+            # 1. Guardamos la pieza de destino (por si nos comemos una)
+            pieza_destino_temp = self.matriz[f2][c2]
+            
+            # 2. Movemos temporalmente en la matriz
+            self.matriz[f2][c2] = pieza
+            self.matriz[f1][c1] = None
+            
+            # 3. Verificamos si este movimiento nos deja en jaque
+            en_jaque = esta_en_jaque(self, pieza.color)
+            
+            # 4. Deshacemos la simulación
+            self.matriz[f1][c1] = pieza
+            self.matriz[f2][c2] = pieza_destino_temp
+            
+            # 5. Si el movimiento nos dejó en jaque, es ilegal y lo bloqueamos
+            if en_jaque:
+                return False
+
+            # 🔥 SI PASÓ LA PRUEBA, APLICAMOS EL MOVIMIENTO REAL 🔥
             self.matriz[f2][c2] = pieza
             self.matriz[f1][c1] = None
 
+            # 🔥 SPRINT 3: APLICAR EL ENROQUE (MOVER LA TORRE) 🔥
+            if pieza.tipo == "rey" and abs(c2 - c1) == 2:
+                if c2 > c1: # Enroque Corto (hacia la derecha)
+                    torre = self.matriz[f2][7]
+                    self.matriz[f2][5] = torre  # La torre pasa al lado del rey
+                    self.matriz[f2][7] = None
+                    torre.ha_movido = True
+                else: # Enroque Largo (hacia la izquierda)
+                    torre = self.matriz[f2][0]
+                    self.matriz[f2][3] = torre  # La torre pasa al lado del rey
+                    self.matriz[f2][0] = None
+                    torre.ha_movido = True
+
+            # SPRINT 3: PROMOCIÓN DEL PEÓN
+            if pieza.tipo == "peon":
+                if (pieza.color == "blanca" and f2 == 0) or (pieza.color == "oscura" and f2 == 7):
+                    pieza.tipo = "reina"  # Promoción automática a reina
+
+            # Registrar que la pieza ya se movió (para bloquear futuros enroques)
+            pieza.ha_movido = True
+
             return True
 
+        return False
+    
+    # -------------------------
+    # 🔥 SPRINT 3: DETECCIÓN DE JAQUE MATE / AHOGADO 🔥
+    # -------------------------
+    def tiene_movimientos_validos(self, color):
+        for f1 in range(8):
+            for c1 in range(8):
+                pieza = self.matriz[f1][c1]
+                if pieza and pieza.color == color:
+                    # Probar mover esta pieza a todas las casillas posibles
+                    for f2 in range(8):
+                        for c2 in range(8):
+                            if movimiento_valido(self, pieza, f1, c1, f2, c2):
+                                # Simulamos el movimiento
+                                pieza_destino_temp = self.matriz[f2][c2]
+                                self.matriz[f2][c2] = pieza
+                                self.matriz[f1][c1] = None
+                                
+                                en_jaque = esta_en_jaque(self, color)
+                                
+                                # Deshacemos la simulación
+                                self.matriz[f1][c1] = pieza
+                                self.matriz[f2][c2] = pieza_destino_temp
+                                
+                                # Si encontramos al menos UN movimiento que no termine en jaque, el juego sigue
+                                if not en_jaque:
+                                    return True
+        # Si revisamos TODO y nada nos salva... no hay movimientos válidos
         return False
