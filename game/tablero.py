@@ -1,5 +1,6 @@
 from game.piezas import Pieza
 from game.reglas import movimiento_valido, esta_en_jaque
+import copy
 
 class Tablero:
 
@@ -63,6 +64,27 @@ class Tablero:
     # -------------------------
     def obtener_pieza(self, fila, col):
         return self.matriz[fila][col]
+
+    # -------------------------
+    # ES MOVIMIENTO VÁLIDO (geométrico)
+    # -------------------------
+    def es_movimiento_valido(self, f1, c1, f2, c2):
+        pieza = self.obtener_pieza(f1, c1)
+        if not pieza:
+            return False
+        return movimiento_valido(self, pieza, f1, c1, f2, c2)
+
+    # -------------------------
+    # CASILLA ATACADA POR UN COLOR
+    # -------------------------
+    def casilla_atacada_por(self, fila, col, color_atacante):
+        for f in range(8):
+            for c in range(8):
+                p = self.obtener_pieza(f, c)
+                if p and p.color == color_atacante:
+                    if self.es_movimiento_valido(f, c, fila, col):
+                        return True
+        return False
 
     # -------------------------
     # MOVER PIEZA CON VALIDACIÓN Y SIMULACIÓN
@@ -154,3 +176,48 @@ class Tablero:
                                     return True
         # Si revisamos TODO y nada nos salva... no hay movimientos válidos
         return False
+
+    # -------------------------
+    # ES MOVIMIENTO SEGURO (no deja al rey en jaque)
+    # -------------------------
+    def es_movimiento_seguro(self, orig_f, orig_c, dest_f, dest_c, color):
+        copia = copy.deepcopy(self)
+        copia.mover_pieza(orig_f, orig_c, dest_f, dest_c)
+
+        rey_pos = None
+        for fila in range(8):
+            for col in range(8):
+                pieza = copia.obtener_pieza(fila, col)
+                if pieza and pieza.tipo == 'rey' and pieza.color == color:
+                    rey_pos = (fila, col)
+                    break
+            if rey_pos:
+                break
+
+        if not rey_pos:
+            return False
+
+        color_oponente = 'oscura' if color == 'blanca' else 'blanca'
+        return not copia.casilla_atacada_por(rey_pos[0], rey_pos[1], color_oponente)
+
+    # -------------------------
+    # OBTENER MOVIMIENTOS VÁLIDOS PARA UNA PIEZA
+    # -------------------------
+    def obtener_movimientos_validos(self, fila, col):
+        movimientos = []
+        pieza = self.obtener_pieza(fila, col)
+        if not pieza:
+            return movimientos
+
+        # Fallback: probar todas las casillas geométricamente válidas
+        geometricos = []
+        for dest_f in range(8):
+            for dest_c in range(8):
+                if self.es_movimiento_valido(fila, col, dest_f, dest_c):
+                    geometricos.append((dest_f, dest_c))
+
+        for dest_f, dest_c in geometricos:
+            if self.es_movimiento_seguro(fila, col, dest_f, dest_c, pieza.color):
+                movimientos.append((dest_f, dest_c))
+
+        return movimientos
